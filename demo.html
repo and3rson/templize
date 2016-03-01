@@ -2,7 +2,81 @@
 <html lang="en">
     <head>
         <title>Templize demo</title>
-        <link rel="stylesheet" href="http://cdn.jsdelivr.net/highlight.js/9.2.0/styles/default.min.css">
+        <!-- Compiled and minified CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/css/materialize.min.css">
+
+        <script src="src/templize.js"></script>
+
+        <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+
+        <!-- Compiled and minified JavaScript -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/js/materialize.min.js"></script>
+
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/codemirror.min.css" />
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/theme/monokai.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/codemirror.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/mode/javascript/javascript.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/mode/xml/xml.min.js"></script>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+        <script type="text/javascript">
+            window.addEventListener('load', function() {
+                $('textarea.code').each(function() {
+                    var $item = $(this);
+                    var unindent = 0;
+                    var first = true;
+                    $item.val($item.val().split('\n').map(function(line) {
+                        var indent = line.length - line.trim().length;
+                        if (first) {
+                            if (line.length) {
+                                first = false;
+                                unindent = indent;
+                            } else {
+                                return null;
+                            }
+                        }
+                        if (unindent) {
+                            line = line.substr(unindent);
+                        }
+                        return line;
+                    }).join('\n').trim());
+                    var mirror = CodeMirror.fromTextArea($item.get(0), {theme: 'monokai', linenumbers: true, mode: $item.attr('data-mode')});
+                    $item.data('mirror', mirror);
+
+                });
+
+                $('textarea[data-result]').each(function() {
+                    var $item = $(this);
+
+                    var resultMirror = $item.data('mirror');
+
+                    var $parent = $item.parent();
+                    var $ctx = $parent.prev().children().eq(0);
+                    var $src = $parent.prev().prev().children().eq(0);
+
+                    var srcMirror = $src.data('mirror');
+                    var ctxMirror = $ctx.data('mirror');
+
+                    var compile = function() {
+                        var src = srcMirror.getValue();
+                        try {
+                            var ctx = new Function('return ' + ctxMirror.getValue() + ';')();
+                        } catch (e) {
+                            resultMirror.setValue('Error: syntax error in context JSON.');
+                            return;
+                        }
+
+                        resultMirror.setValue(new Templize(src).render(ctx).innerHTML);
+                    };
+
+                    srcMirror.on('change', compile);
+                    ctxMirror.on('change', compile);
+                    compile();
+                });
+            });
+        </script>
+
+<!--        <link rel="stylesheet" href="http://cdn.jsdelivr.net/highlight.js/9.2.0/styles/default.min.css">
         <script src="http://cdn.jsdelivr.net/highlight.js/9.2.0/highlight.min.js"></script>
         <script src="src/templize.js"></script>
         <script type="text/javascript">
@@ -52,9 +126,31 @@
             });
         </script>
         <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Raleway:200,400,800">
-        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,700">
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,700">-->
         <style type="text/css">
-            * {
+            .editors .col {
+                position: relative;
+            }
+            .editors .col:after {
+                content: '...';
+                position: absolute;
+                top: 0.5rem;
+                right: 0.75rem;
+                padding: 5px;
+                font-weight: bold;
+                background: rgba(0, 0, 0, 0.5);
+                color: rgba(255, 255, 255, 0.5);
+            }
+            .editors .col:first-child:after {
+                content: 'Template';
+            }
+            .editors .col:nth-child(2):after {
+                content: 'Context';
+            }
+            .editors .col:last-child:after {
+                content: 'Output';
+            }
+/*            * {
                 box-sizing: border-box;
             }
             h1, h2, h3 {
@@ -88,61 +184,85 @@
             .result {
                 border: 2px dashed rgba(0, 0, 0, 0.1);
                 padding: 1rem;
-            }
+            }*/
         </style>
     </head>
     <body>
-        <div class="main">
-            <h1>Templize demo</h1>
-            <h2>Variables</h2>
-
-            <div class="row">
-                <div class="cell">
-                    <code class="xml" id="vars1-src">
-                        <h1>
-                            <echo>title</echo>
-                        </h1>
-                        <p>
-                            <echo>data.content</echo>
-                        </p>
-                    </code>
-                </div>
-                <div class="cell">
-                    <code class="js" id="vars1-ctx">
-                        {
-                            title: "Hello world",
-                            data: {
-                                content: "This is a text!"
-                            }
-                        }
-                    </code>
+        <nav class="deep-orange darken-4">
+            <div class="nav-wrapper">
+                <div class="container">
+                    <a href="#" class="brand-logo">Templize demo</a>
+                    <ul id="nav-mobile" class="right hide-on-med-and-down">
+                        <li>
+                            <a href="http://github.com/and3rson/templize">
+                                Use the source, Luke! <i class="material-icons left">code</i>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-            <a href="#" class="render" data-src="#vars1-src" data-ctx="#vars1-ctx" data-dest="#vars1-dst">Render</a>
-            <div class="result" id="vars1-dst">
-            ...
+        </nav>
+
+        <div class="center-align grey lighten-3" style="padding: 5rem 0">
+            <h1>Templize</h1>
+            <h3>A lightning-fast JavaScript/DOM template engine.</h3>
+        </div>
+
+        <div class="container">
+            <h2>Variables</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                        <textarea class="code" autocomplete="off" data-mode="xml">
+                            <h1>
+                                <echo>title</echo>
+                            </h1>
+                            <p>
+                                <echo>data.content</echo>
+                            </p>
+                        </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                        <textarea class="code" autocomplete="off" data-mode="javascript">
+                            {
+                                title: "Hello world",
+                                data: {
+                                    content: "This is a text!"
+                                }
+                            }
+                        </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                        <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                        </textarea>
+                    </div>
+                </div>
             </div>
 
             <h2>Loops 1: Array</h2>
 
-            <div class="row">
-                <div class="cell">
-                    <code class="xml" id="loops1-src">
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
                         <ul>
                             <loop array="items">
                                 <li>
-                                    #<echo>key</echo>:
-                                    <echo>value.name</echo>
-                                    is
-                                    <echo>value.age</echo>
-                                    years old
+                                    #<echo>key</echo>: <echo>value.name</echo> is <echo>value.age</echo> years old
                                 </li>
                             </loop>
                         </ul>
-                    </code>
+                    </textarea>
+                    </div>
                 </div>
-                <div class="cell">
-                    <code class="js" id="loops1-ctx">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
                         {
                             items: [
                                 {
@@ -159,19 +279,23 @@
                                 },
                             ]
                         }
-                    </code>
+                    </textarea>
+                    </div>
                 </div>
-            </div>
-            <a href="#" class="render" data-src="#loops1-src" data-ctx="#loops1-ctx" data-dest="#loops1-dst">Render</a>
-            <div class="result" id="loops1-dst">
-            ...
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                </div>
             </div>
 
             <h2>Loops 2: Object</h2>
 
-            <div class="row">
-                <div class="cell">
-                    <code class="xml" id="loops2-src">
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
                         <ul>
                             <loop object="items">
                                 <li>
@@ -179,10 +303,12 @@
                                 </li>
                             </loop>
                         </ul>
-                    </code>
+                    </textarea>
+                    </div>
                 </div>
-                <div class="cell">
-                    <code class="js" id="loops2-ctx">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
                         {
                             items: {
                                 eggs: {
@@ -199,52 +325,48 @@
                                 },
                             }
                         }
-                    </code>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
                 </div>
             </div>
-            <a href="#" class="render" data-src="#loops2-src" data-ctx="#loops2-ctx" data-dest="#loops2-dst">Render</a>
-            <div class="result" id="loops2-dst">
-            ...
-            </div>
 
-            <h2>Conditions</h2>
+            <h2>Protip: alternative form</h2>
 
-            <div class="row">
-                <div class="cell">
-                    <code class="xml" id="if1-src">
-                        <ul>
-                            <loop object="items">
-                                <li>
-                                    Got <echo>value.count</echo> <echo>key</echo> who is <echo>value.how</echo>
-                                </li>
-                            </loop>
-                        </ul>
-                    </code>
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <p>You can write any templize tags in two forms.</p>
+
+                        <p>First is by <echo>first</echo>.<br />
+                        Second is by <t id="echo">second</t>.</p>
+
+                        <p>This works for all tags: "echo", "loop", "if" etc.</p>
+                    </textarea>
+                    </div>
                 </div>
-                <div class="cell">
-                    <code class="js" id="if1-ctx">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
                         {
-                            items: {
-                                eggs: {
-                                    count: 34,
-                                    how: 'good'
-                                },
-                                spam: {
-                                    count: 42,
-                                    how: 'terrible'
-                                },
-                                donkey: {
-                                    count: 1,
-                                    how: 'firing my lazer!'
-                                },
-                            }
+                            first: 'using "echo", "loop" or "if" tag',
+                            second: 'using "t" tag with "id=ECHO" etc'
                         }
-                    </code>
+                    </textarea>
+                    </div>
                 </div>
-            </div>
-            <a href="#" class="render" data-src="#if1-src" data-ctx="#if1-ctx" data-dest="#if1-dst">Render</a>
-            <div class="result" id="if1-dst">
-            ...
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                </div>
             </div>
         </div>
     </body>
