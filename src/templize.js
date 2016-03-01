@@ -69,6 +69,9 @@ Templize.prototype.render = function(context, element) {
         if (array_name) {
             iteratorFunction = function(context, callback) {
                 var array = self.resolve(context, array_name);
+                if (!(Symbol.iterator in Object(array))) {
+                    throw new Error('Templize error: ' + array_name + ' is not iterable.');
+                }
                 for (var arrayKey = 0; arrayKey < array.length; arrayKey++) {
                     var arrayValue = array[arrayKey];
                     callback(arrayKey, arrayValue, arrayKey == 0, arrayKey == array.length - 1);

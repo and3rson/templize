@@ -50,9 +50,9 @@
 
                     var resultMirror = $item.data('mirror');
 
-                    var $parent = $item.parent();
-                    var $ctx = $parent.prev().children().eq(0);
-                    var $src = $parent.prev().prev().children().eq(0);
+                    var $parent = $item.parent().parent();
+                    var $ctx = $parent.prev().children().eq(0).children().eq(0);
+                    var $src = $parent.prev().prev().children().eq(0).children().eq(0);
 
                     var srcMirror = $src.data('mirror');
                     var ctxMirror = $ctx.data('mirror');
@@ -66,7 +66,11 @@
                             return;
                         }
 
-                        resultMirror.setValue(new Templize(src).render(ctx).innerHTML);
+                        try {
+                            resultMirror.setValue(new Templize(src).render(ctx).innerHTML);
+                        } catch(e) {
+                            resultMirror.setValue(e.message);
+                        }
                     };
 
                     srcMirror.on('change', compile);
