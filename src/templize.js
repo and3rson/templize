@@ -22,12 +22,21 @@ Templize.prototype.renderChildren = function(context, element) {
     return results;
 };
 
+Templize.prototype.resolve = function (obj, path) {
+    return path.split('.').reduce(function (prev, curr) {
+        //return !safe ? prev[curr] : (prev ? prev[curr] : undefined)
+        return prev ? prev[curr] : undefined
+    }, obj || self)
+};
+
 Templize.prototype.render = function(context, element) {
+    var self = this;
+
     if (!element) {
         var doc = document.createElement('div');
 
-        doc.innerHTML = this.source.replace(/%([a-zA-Z0-9_-]+)%/g, function (all, name) {
-            return context[name];
+        doc.innerHTML = this.source.replace(/%([a-zA-Z0-9_\.-]+)%/g, function (all, name) {
+            return self.resolve(context, name);
         });
 
         return this.render(context, doc);
@@ -41,12 +50,12 @@ Templize.prototype.render = function(context, element) {
     if (tagName == 'ECHO') {
         //var varKey = element.attributes[0].name;
         var varKey = element.textContent.trim();
-        return document.createTextNode(context[varKey]);
+        return document.createTextNode(self.resolve(context, varKey));
     } else if (tagName == 'IF') {
         var trueKey = element.getAttribute('true');
         var falseKey = element.getAttribute('false');
 
-        if ((trueKey && context[trueKey]) || (falseKey && !context[falseKey])) {
+        if ((trueKey && self.resolve(context, trueKey)) || (falseKey && !self.resolve(context, falseKey))) {
             return this.renderChildren(context, element);
         } else {
             return [];
@@ -59,7 +68,7 @@ Templize.prototype.render = function(context, element) {
 
         if (array_name) {
             iteratorFunction = function(context, callback) {
-                var array = context[array_name];
+                var array = self.resolve(context, array_name);
                 for (var arrayKey = 0; arrayKey < array.length; arrayKey++) {
                     var arrayValue = array[arrayKey];
                     callback(arrayKey, arrayValue, arrayKey == 0, arrayKey == array.length - 1);
@@ -67,7 +76,7 @@ Templize.prototype.render = function(context, element) {
             }
         } else if (object_name) {
             iteratorFunction = function(context, callback) {
-                var object = context[object_name];
+                var object = self.resolve(context, object_name);
                 var i = 0;
                 var prev;
                 for (var objectKey in object) {

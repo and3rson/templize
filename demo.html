@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Templize demo</title>
+        <link rel="stylesheet" href="http://cdn.jsdelivr.net/highlight.js/9.2.0/styles/default.min.css">
+        <script src="http://cdn.jsdelivr.net/highlight.js/9.2.0/highlight.min.js"></script>
+        <script src="src/templize.js"></script>
+        <script type="text/javascript">
+            window.addEventListener('load', function() {
+                var $ = function(selector) {
+                    return document.querySelector(selector);
+                };
+                var $each = function(selector, callback) {
+                    Array.prototype.slice.call(document.querySelectorAll(selector)).forEach(callback);
+                };
+                $each('code', function($item) {
+                    var src = $item.innerHTML;
+                    var first = true;
+                    var unindent = 0;
+                    src = src.split('\n').map(function(line) {
+                        var indent = line.length - line.trim().length;
+                        if (first) {
+                            if (line.length) {
+                                first = false;
+                                unindent = indent;
+                            } else {
+                                return null;
+                            }
+                        }
+                        if (unindent) {
+                            line = line.substr(unindent);
+                        }
+                        return line;
+                    }).join('\n').trim();
+
+                    $item.setAttribute('src', src);
+                    $item.innerHTML = src.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+                    hljs.highlightBlock($item);
+                });
+
+                $each('.render', function($button) {
+                    $button.onclick = function(e) {
+                        e.preventDefault();
+                        var src = $($button.getAttribute('data-src')).getAttribute('src');
+                        var ctx = new Function('return ' + $($button.getAttribute('data-ctx')).getAttribute('src') + ';')();
+                        var $dest = $($button.getAttribute('data-dest'));
+                        var result = new Templize(src).render(ctx).innerHTML;
+                        $dest.innerHTML = /*result.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '<hr />' +*/ result;
+                    }
+                });
+            });
+        </script>
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Raleway:200,400,800">
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,700">
+        <style type="text/css">
+            * {
+                box-sizing: border-box;
+            }
+            h1, h2, h3 {
+                font-family: Raleway, sans-serif;
+            }
+            html, body {
+                font-family: Roboto;
+                font-size: 14px;
+                margin: 0;
+                padding: 0;
+            }
+            .main {
+                max-width: 1200px;
+                margin: 5rem auto 0;
+            }
+            .row {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+            .cell {
+                overflow-x: auto;
+                width: 50%;
+                display: table-cell;
+                vertical-align: top;
+                background-color: #F0F0F0;
+            }
+            code {
+                white-space: pre;
+            }
+            .result {
+                border: 2px dashed rgba(0, 0, 0, 0.1);
+                padding: 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="main">
+            <h1>Templize demo</h1>
+            <h2>Variables</h2>
+
+            <div class="row">
+                <div class="cell">
+                    <code class="xml" id="vars1-src">
+                        <h1>
+                            <echo>title</echo>
+                        </h1>
+                        <p>
+                            <echo>data.content</echo>
+                        </p>
+                    </code>
+                </div>
+                <div class="cell">
+                    <code class="js" id="vars1-ctx">
+                        {
+                            title: "Hello world",
+                            data: {
+                                content: "This is a text!"
+                            }
+                        }
+                    </code>
+                </div>
+            </div>
+            <a href="#" class="render" data-src="#vars1-src" data-ctx="#vars1-ctx" data-dest="#vars1-dst">Render</a>
+            <div class="result" id="vars1-dst">
+            ...
+            </div>
+
+            <h2>Loops 1: Array</h2>
+
+            <div class="row">
+                <div class="cell">
+                    <code class="xml" id="loops1-src">
+                        <ul>
+                            <loop array="items">
+                                <li>
+                                    #<echo>key</echo>:
+                                    <echo>value.name</echo>
+                                    is
+                                    <echo>value.age</echo>
+                                    years old
+                                </li>
+                            </loop>
+                        </ul>
+                    </code>
+                </div>
+                <div class="cell">
+                    <code class="js" id="loops1-ctx">
+                        {
+                            items: [
+                                {
+                                    name: 'Andrew',
+                                    age: 24
+                                },
+                                {
+                                    name: 'Gaben',
+                                    age: 69
+                                },
+                                {
+                                    name: 'Earth',
+                                    age: 'over 9000'
+                                },
+                            ]
+                        }
+                    </code>
+                </div>
+            </div>
+            <a href="#" class="render" data-src="#loops1-src" data-ctx="#loops1-ctx" data-dest="#loops1-dst">Render</a>
+            <div class="result" id="loops1-dst">
+            ...
+            </div>
+
+            <h2>Loops 2: Object</h2>
+
+            <div class="row">
+                <div class="cell">
+                    <code class="xml" id="loops2-src">
+                        <ul>
+                            <loop object="items">
+                                <li>
+                                    Got <echo>value.count</echo> <echo>key</echo> who is <echo>value.how</echo>
+                                </li>
+                            </loop>
+                        </ul>
+                    </code>
+                </div>
+                <div class="cell">
+                    <code class="js" id="loops2-ctx">
+                        {
+                            items: {
+                                eggs: {
+                                    count: 34,
+                                    how: 'good'
+                                },
+                                spam: {
+                                    count: 42,
+                                    how: 'terrible'
+                                },
+                                donkey: {
+                                    count: 1,
+                                    how: 'firing my lazer!'
+                                },
+                            }
+                        }
+                    </code>
+                </div>
+            </div>
+            <a href="#" class="render" data-src="#loops2-src" data-ctx="#loops2-ctx" data-dest="#loops2-dst">Render</a>
+            <div class="result" id="loops2-dst">
+            ...
+            </div>
+
+            <h2>Conditions</h2>
+
+            <div class="row">
+                <div class="cell">
+                    <code class="xml" id="if1-src">
+                        <ul>
+                            <loop object="items">
+                                <li>
+                                    Got <echo>value.count</echo> <echo>key</echo> who is <echo>value.how</echo>
+                                </li>
+                            </loop>
+                        </ul>
+                    </code>
+                </div>
+                <div class="cell">
+                    <code class="js" id="if1-ctx">
+                        {
+                            items: {
+                                eggs: {
+                                    count: 34,
+                                    how: 'good'
+                                },
+                                spam: {
+                                    count: 42,
+                                    how: 'terrible'
+                                },
+                                donkey: {
+                                    count: 1,
+                                    how: 'firing my lazer!'
+                                },
+                            }
+                        }
+                    </code>
+                </div>
+            </div>
+            <a href="#" class="render" data-src="#if1-src" data-ctx="#if1-ctx" data-dest="#if1-dst">Render</a>
+            <div class="result" id="if1-dst">
+            ...
+            </div>
+        </div>
+    </body>
+</html>
