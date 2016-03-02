@@ -1,3 +1,5 @@
 # templize
 
-The lightest DOM-based JavaScript template engine in the world.
+A lightning-fast JavaScript/DOM template engine.
+
+Demo: [http://and3rson.github.io/templize/](http://and3rson.github.io/templize/)
