@@ -23,10 +23,15 @@ Templize.prototype.renderChildren = function(context, element) {
 };
 
 Templize.prototype.resolve = function (obj, path) {
-    return path.split('.').reduce(function (prev, curr) {
-        //return !safe ? prev[curr] : (prev ? prev[curr] : undefined)
-        return prev ? prev[curr] : undefined
-    }, obj || self)
+//    path.split('.').reduce(function (prev, curr) {
+//        //return !safe ? prev[curr] : (prev ? prev[curr] : undefined)
+//        return prev ? prev[curr] : undefined
+//    }, obj || self);
+    try {
+        return new Function('ctx', 'return ' + path).call(null, obj);
+    } catch(e) {
+        throw new Error('Templize error: wrong variable or expression: "' + path + '"');
+    }
 };
 
 Templize.prototype.render = function(context, element) {
@@ -44,18 +49,21 @@ Templize.prototype.render = function(context, element) {
 
     var tagName = element.nodeName;
     if (tagName == 'T') {
-        tagName = element.id.toUpperCase();
+        tagName = element.className.toUpperCase();
     }
 
     if (tagName == 'ECHO') {
         //var varKey = element.attributes[0].name;
         var varKey = element.textContent.trim();
-        return document.createTextNode(self.resolve(context, varKey));
+        var varValue = self.resolve(context, varKey);
+        if (varValue.toString() == '[object Object]') {
+            varValue = '[Object: ' + JSON.stringify(varValue) + ']';
+        }
+        return document.createTextNode(varValue);
     } else if (tagName == 'IF') {
-        var trueKey = element.getAttribute('true');
-        var falseKey = element.getAttribute('false');
+        var cond = self.resolve(context, element.getAttribute('cond'));
 
-        if ((trueKey && self.resolve(context, trueKey)) || (falseKey && !self.resolve(context, falseKey))) {
+        if (self.resolve(context, cond)) {
             return this.renderChildren(context, element);
         } else {
             return [];
@@ -63,6 +71,7 @@ Templize.prototype.render = function(context, element) {
     } else if (tagName == 'LOOP') {
         var array_name = element.getAttribute('array');
         var object_name = element.getAttribute('object');
+        var of_name = element.getAttribute('of');
 
         var iteratorFunction;
 
@@ -95,8 +104,16 @@ Templize.prototype.render = function(context, element) {
                     callback(prev, object[prev], i == 1, true);
                 }
             }
+        } else if (of_name) {
+            iteratorFunction = function(context, callback) {
+                var arrayKey = 0;
+                var generator = self.resolve(context, of_name);
+                for (arrayValue of generator) {
+                    callback(arrayKey++, arrayValue, arrayKey == 0, false); // TODO: Detect last iteration over generator.
+                }
+            }
         } else {
-            throw new Error('<loop> tag must contain "array" or "object" attribute.');
+            throw new Error('<loop> tag must contain "array", "object" or "of" attribute.');
         }
 
         var results = [];

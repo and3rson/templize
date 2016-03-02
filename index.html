@@ -2,22 +2,21 @@
 <html lang="en">
     <head>
         <title>Templize demo</title>
-        <!-- Compiled and minified CSS -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/css/materialize.min.css">
-
-        <script src="src/templize.js"></script>
-
         <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 
+        <!-- Compiled and minified CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/css/materialize.min.css">
         <!-- Compiled and minified JavaScript -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/js/materialize.min.js"></script>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+        <script src="https://raw.githubusercontent.com/and3rson/templize/master/src/templize.js"></script>
 
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/codemirror.min.css" />
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/theme/monokai.css" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/codemirror.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/mode/javascript/javascript.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/mode/xml/xml.min.js"></script>
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
         <script type="text/javascript">
             window.addEventListener('load', function() {
@@ -60,7 +59,7 @@
                     var compile = function() {
                         var src = srcMirror.getValue();
                         try {
-                            var ctx = new Function('return ' + ctxMirror.getValue() + ';')();
+                            var ctx = new Function('return ' + ctxMirror.getValue())();
                         } catch (e) {
                             resultMirror.setValue('Error: syntax error in context JSON.');
                             return;
@@ -220,10 +219,14 @@
                     <div class="card hoverable">
                         <textarea class="code" autocomplete="off" data-mode="xml">
                             <h1>
-                                <echo>title</echo>
+                                <echo>ctx.title</echo>
                             </h1>
                             <p>
-                                <echo>data.content</echo>
+                                <echo>ctx.data.content</echo>
+                            </p>
+                            <p>
+                                You can even call functions:
+                                <echo>ctx.foo()</echo>
                             </p>
                         </textarea>
                     </div>
@@ -235,6 +238,9 @@
                                 title: "Hello world",
                                 data: {
                                     content: "This is a text!"
+                                },
+                                foo: function() {
+                                    return 'bar';
                                 }
                             }
                         </textarea>
@@ -248,16 +254,16 @@
                 </div>
             </div>
 
-            <h2>Loops 1: Array</h2>
+            <h2>Loops 1: Arrays</h2>
 
             <div class="row editors">
                 <div class="col s4">
                     <div class="card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml">
                         <ul>
-                            <loop array="items">
+                            <loop array="ctx.items">
                                 <li>
-                                    #<echo>key</echo>: <echo>value.name</echo> is <echo>value.age</echo> years old
+                                    #<echo>ctx.key</echo>: <echo>ctx.value.name</echo> is <echo>ctx.value.age</echo> years old
                                 </li>
                             </loop>
                         </ul>
@@ -294,16 +300,16 @@
                 </div>
             </div>
 
-            <h2>Loops 2: Object</h2>
+            <h2>Loops 2: Objects</h2>
 
             <div class="row editors">
                 <div class="col s4">
                     <div class="card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml">
                         <ul>
-                            <loop object="items">
+                            <loop object="ctx.items">
                                 <li>
-                                    Got <echo>value.count</echo> <echo>key</echo> who is <echo>value.how</echo>
+                                    Got <echo>ctx.value.count</echo> <echo>ctx.key</echo> who is <echo>ctx.value.how</echo>
                                 </li>
                             </loop>
                         </ul>
@@ -340,7 +346,86 @@
                 </div>
             </div>
 
-            <h2>Protip: alternative form</h2>
+            <h2>Loops 3: Generators</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <ul>
+                            <loop of="ctx.generator()">
+                                <li>
+                                    And the next yield is... <echo>ctx.value</echo>!
+                                </li>
+                            </loop>
+                        </ul>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                            generator: function* () {
+                                yield 'foo';
+                                yield 'bar';
+                                yield 'baz';
+
+                                for (var i = 0; i < 10; i++) {
+                                    yield i;
+                                }
+                            }
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Conditions</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <p>
+                            <if cond="ctx.a > ctx.b">
+                                <echo>ctx.a</echo> is greater than <echo>ctx.b</echo>.
+                            </if>
+                            <if cond="ctx.a > 50">
+                                <echo>ctx.a</echo> is greater than 50.
+                            </if>
+                            <if cond="ctx.a < 50">
+                                <echo>ctx.a</echo> is less than 50.
+                            </if>
+                        </p>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                            a: 5,
+                            b: 2
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Misc: Alternative form</h2>
 
             <div class="row editors">
                 <div class="col s4">
@@ -348,8 +433,8 @@
                     <textarea class="code" autocomplete="off" data-mode="xml">
                         <p>You can write any templize tags in two forms.</p>
 
-                        <p>First is by <echo>first</echo>.<br />
-                        Second is by <t id="echo">second</t>.</p>
+                        <p>First is by <echo>ctx.first</echo>.<br />
+                        Second is by <t class="echo">ctx.second</t>.</p>
 
                         <p>This works for all tags: "echo", "loop", "if" etc.</p>
                     </textarea>
@@ -360,7 +445,90 @@
                     <textarea class="code" autocomplete="off" data-mode="javascript">
                         {
                             first: 'using "echo", "loop" or "if" tag',
-                            second: 'using "t" tag with "id=ECHO" etc'
+                            second: 'using "t" tag with "echo" class etc'
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Misc: Inline JS</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <!-- Inline calculations -->
+                        <p>
+                            Square root of 1048576 is <echo>Math.sqrt(1048576)</echo>
+                        </p>
+
+                        <!-- You can write anything -->
+                        <ul>
+                            <loop array="[1, 2, 3, 4, 5]">
+                                <li><echo>ctx.key</echo></li>
+                            </loop>
+                        </ul>
+
+                        <!-- Even like this -->
+                        <p>
+                            Hard-Coded <echo>'s'.toUpperCase() + 't' + 'r' + 'i' + 'n' + 'g'</echo>
+                        </p>
+
+                        <!-- And even this. -->
+                        <p>
+                            <echo>(function() { return 'Hello world!' })();</echo>
+                        </p>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                            // No context for this demo :)
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Misc: Large views</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <loop of="ctx.generate()">
+                            <li><echo>ctx.key</echo><sup>2</sup> = <echo>ctx.value</echo></li>
+                        </loop>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                            // ES6 generator
+                            generate: function*() {
+                                var i = 0;
+
+                                while (i <= 1000) {
+                                    yield Math.pow(i++, 2);
+                                }
+                            }
                         }
                     </textarea>
                     </div>
