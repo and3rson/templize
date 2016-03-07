@@ -10,13 +10,27 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/js/materialize.min.js"></script>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-        <script src="src/templize.js"></script>
+        <script src="src/templize.js?3"></script>
 
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/codemirror.min.css" />
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/theme/monokai.css" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/codemirror.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/mode/javascript/javascript.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.12.0/mode/xml/xml.min.js"></script>
+
+        <style type="text/css">
+            .source {
+                display: none;
+            }
+            .preview {
+                height: 300px;
+                overflow: scroll;
+                padding: 1rem;
+            }
+            .mode {
+                text-align: right;
+            }
+        </style>
 
         <script type="text/javascript">
             window.addEventListener('load', function() {
@@ -52,6 +66,7 @@
                     var $parent = $item.parent().parent();
                     var $ctx = $parent.prev().children().eq(0).children().eq(0);
                     var $src = $parent.prev().prev().children().eq(0).children().eq(0);
+                    var $preview = $item.parent().parent().find('.preview');
 
                     var srcMirror = $src.data('mirror');
                     var ctxMirror = $ctx.data('mirror');
@@ -62,19 +77,37 @@
                             var ctx = new Function('return ' + ctxMirror.getValue())();
                         } catch (e) {
                             resultMirror.setValue('Error: syntax error in context JSON.');
+                            $preview.html('Error: syntax error in context JSON.');
                             return;
                         }
 
                         try {
-                            resultMirror.setValue(new Templize(src).render(ctx).innerHTML);
+                            var result = new Templize(src).render(ctx).innerHTML;
+                            resultMirror.setValue(result);
+                            $preview.html(result);
                         } catch(e) {
                             resultMirror.setValue(e.message);
+                            $preview.html(encodeURIComponent(e.message));
                         }
                     };
 
                     srcMirror.on('change', compile);
                     ctxMirror.on('change', compile);
                     compile();
+
+                    $parent.find('[data-show="source"]').on('click', function(e) {
+                        $parent.find('.preview').css('display', 'none');
+                        $parent.find('.source').css('display', 'block');
+                        compile();
+                        e.preventDefault();
+                    });
+
+                    $parent.find('[data-show="preview"]').on('click', function(e) {
+                        $parent.find('.source').css('display', 'none');
+                        $parent.find('.preview').css('display', 'block');
+                        compile();
+                        e.preventDefault();
+                    });
                 });
             });
         </script>
@@ -247,9 +280,13 @@
                     </div>
                 </div>
                 <div class="col s4">
-                    <div class="card hoverable">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
                         <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                         </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
                     </div>
                 </div>
             </div>
@@ -293,9 +330,13 @@
                     </div>
                 </div>
                 <div class="col s4">
-                    <div class="card hoverable">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                     </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
                     </div>
                 </div>
             </div>
@@ -339,9 +380,13 @@
                     </div>
                 </div>
                 <div class="col s4">
-                    <div class="card hoverable">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                     </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
                     </div>
                 </div>
             </div>
@@ -380,9 +425,13 @@
                     </div>
                 </div>
                 <div class="col s4">
-                    <div class="card hoverable">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                     </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
                     </div>
                 </div>
             </div>
@@ -403,6 +452,15 @@
                             <if cond="ctx.a < 50">
                                 <echo>ctx.a</echo> is less than 50.
                             </if>
+
+                            <loop array="ctx.numbers">
+                                <if cond="ctx.value % 2">
+                                    <echo>ctx.value</echo> is odd.
+                                </if>
+                                <if cond="!(ctx.value % 2)">
+                                    <echo>ctx.value</echo> is even.
+                                </if>
+                            </loop>
                         </p>
                     </textarea>
                     </div>
@@ -412,15 +470,20 @@
                     <textarea class="code" autocomplete="off" data-mode="javascript">
                         {
                             a: 5,
-                            b: 2
+                            b: 2,
+                            numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                         }
                     </textarea>
                     </div>
                 </div>
                 <div class="col s4">
-                    <div class="card hoverable">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                     </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
                     </div>
                 </div>
             </div>
@@ -451,9 +514,13 @@
                     </div>
                 </div>
                 <div class="col s4">
-                    <div class="card hoverable">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                     </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
                     </div>
                 </div>
             </div>
@@ -498,9 +565,13 @@
                     </div>
                 </div>
                 <div class="col s4">
-                    <div class="card hoverable">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                     </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
                     </div>
                 </div>
             </div>
@@ -534,12 +605,157 @@
                     </div>
                 </div>
                 <div class="col s4">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Helpers: &lt;trim&gt;</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <!-- <trim> removes whitespaces and newlines between tags. -->
+                        <trim>
+                            <ul>
+                                <loop array="ctx.numbers">
+                                    <if cond="ctx.value % 2">
+                                        <li><echo>ctx.value</echo> is odd.</li>
+                                    </if>
+                                    <if cond="!(ctx.value % 2)">
+                                        <li><echo>ctx.value</echo> is even.</li>
+                                    </if>
+                                </loop>
+                            </ul>
+                        </trim>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                            numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Helpers: &lt;unsafe&gt;</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <!-- <unsafe> replaces certain characters with HTML entities. -->
+                        <unsafe>
+                            <script>alert('MUWAHAHAHAHA');</script>
+                        </unsafe>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="preview card hoverable"></div>
+                    <div class="source card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                    <div class="mode">
+                        <a data-show="source" href="#">source</a> | <a data-show="preview" href="#">preview</a>
+                    </div>
+                </div>
+            </div>
+
+<!--
+            <h2>Helpers: &lt;raw&gt;</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <!-- <raw> disables block parsing. -- >
+                        <raw>
+                            <loop array="ololo">
+                                <if cond="42">The main answer</if>
+                            </loop>
+                        </raw>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                            numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
                     <div class="card hoverable">
                     <textarea class="code" autocomplete="off" data-mode="xml" data-result>
                     </textarea>
                     </div>
                 </div>
             </div>
+-->
+
+<!--
+            <h2>Misc: Variables without &lt;echo&gt; tags</h2>
+
+            <div class="row editors">
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml">
+                        <loop array="ctx.numbers">
+                            <h%{ctx.value}>Header %{ctx.value}</h%{ctx.value}> <echo>ctx.value</echo>
+                        </loop>
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="javascript">
+                        {
+                            numbers: [1, 2, 3, 4, 5, 6]
+                        }
+                    </textarea>
+                    </div>
+                </div>
+                <div class="col s4">
+                    <div class="card hoverable">
+                    <textarea class="code" autocomplete="off" data-mode="xml" data-result>
+                    </textarea>
+                    </div>
+                </div>
+            </div>
+-->
         </div>
     </body>
 </html>

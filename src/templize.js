@@ -37,12 +37,18 @@ Templize.prototype.resolve = function (obj, path) {
 Templize.prototype.render = function(context, element) {
     var self = this;
 
+    context = context || {};
+
+    context._internal = context._internal || {};
+
     if (!element) {
         var doc = document.createElement('div');
 
-        doc.innerHTML = this.source.replace(/%([a-zA-Z0-9_\.-]+)%/g, function (all, name) {
-            return self.resolve(context, name);
-        });
+        doc.innerHTML = this.source;
+
+        //doc.innerHTML = this.source.replace(/%\{([^}]+)\}/g, function (all, name) {
+            //return self.resolve(context, name);
+        //});
 
         return this.render(context, doc);
     }
@@ -139,8 +145,27 @@ Templize.prototype.render = function(context, element) {
         context.last = savedLast;
 
         return results;
+    } else if (tagName == 'TRIM') {
+        var prev = context._internal.trim;
+        context._internal.trim = true;
+
+        result = this.renderChildren(context, element);
+
+        context._internal.trim = prev;
+
+        return result;
+    //} else if (tagName == 'RAW') {
+        //return document.createTextNode(element.innerHTML);
+    } else if (tagName == 'UNSAFE') {
+        return document.createTextNode(element.innerHTML);
     } else if (tagName == '#text') {
-        return document.createTextNode(element.textContent);
+        var content = element.textContent;
+
+        if (context._internal.trim && content.trim().length == 0) {
+            content = '';
+        }
+
+        return document.createTextNode(content);
     } else if (tagName == '#comment') {
         return document.createComment(element.textContent);
     } else {
