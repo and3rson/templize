@@ -87,7 +87,7 @@
                             $preview.html(result);
                         } catch(e) {
                             resultMirror.setValue(e.message);
-                            $preview.html(e.message);
+                            $preview.html(e.message.replace('<', '&lt;'));
                         }
                     };
 
